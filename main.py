@@ -1,13 +1,36 @@
 import sys
 from pathlib import Path
 from PySide6.QtWidgets import QApplication, QMessageBox, QDialog
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QStandardPaths
 from PySide6.QtGui import QIcon, QPixmap, QPainter
 from PySide6.QtSvg import QSvgRenderer
 from styles import DARK_STYLE
 from store import PasswordStore
 from dialogs import ModernLoginDialog
 from main_window import ModernMainWindow
+
+
+def get_store_path() -> Path:
+    """Return a stable path for the encrypted password store."""
+    app_data_dir = Path(QStandardPaths.writableLocation(QStandardPaths.AppDataLocation))
+    if not app_data_dir or app_data_dir == Path('.'):
+        app_data_dir = Path.home() / "AppData" / "Roaming" / "SecureVault"
+    else:
+        app_data_dir = app_data_dir
+
+    app_data_dir.mkdir(parents=True, exist_ok=True)
+    store_path = app_data_dir / "passwords.enc"
+
+    # If a local store exists next to the script, migrate it once to the persistent app data path.
+    local_store = Path(__file__).parent / "passwords.enc"
+    if local_store.exists() and not store_path.exists():
+        try:
+            local_store.replace(store_path)
+        except Exception:
+            pass
+
+    return store_path
+
 
 def main() -> int:
     app = QApplication(sys.argv)
@@ -32,7 +55,7 @@ def main() -> int:
     # Apply modern style
     app.setStyleSheet(DARK_STYLE)
     
-    store_path = Path(__file__).parent / "passwords.enc"
+    store_path = get_store_path()
     
     # Modern login
     login = ModernLoginDialog(store_path)
