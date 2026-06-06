@@ -1,62 +1,41 @@
-"""Main entry point - like index.html"""
 import sys
 from pathlib import Path
 
 from PySide6.QtWidgets import QApplication, QMessageBox, QDialog
-from PySide6.QtCore import Qt
 
-from styles import apply_style
+from styles import DARK_STYLE
 from store import PasswordStore
-from dialogs import LoginDialog
-from main_window import PasswordManagerMainWindow
-
+from dialogs import ModernLoginDialog
+from main_window import ModernMainWindow
 
 def main() -> int:
-    """Main application entry point"""
-    # Create application
     app = QApplication(sys.argv)
-    app.setApplicationName("Password Manager")
-    app.setOrganizationName("YourCompany")
+    app.setApplicationName("SecureVault")
     
-    # Apply styling (like loading CSS)
-    apply_style(app)
+    # Apply modern style
+    app.setStyleSheet(DARK_STYLE)
     
-    # Set application icon (optional - add your own .ico file)
-    # app.setWindowIcon(QIcon("icon.png"))
-    
-    # Path to store encrypted passwords
     store_path = Path(__file__).parent / "passwords.enc"
     
-    # Show login dialog
-    login = LoginDialog(store_path)
+    # Modern login
+    login = ModernLoginDialog(store_path)
     if login.exec() != QDialog.DialogCode.Accepted:
-        return 0  # User cancelled
-    
-    # Validate master password
-    if not login.password:
-        QMessageBox.warning(None, "Password Required", "Master password cannot be empty!")
         return 0
     
-    # Load password store
+    if not login.password:
+        QMessageBox.warning(None, "Error", "Password required!")
+        return 0
+    
     store = PasswordStore(store_path, login.password)
     try:
         store.load()
     except Exception as e:
-        QMessageBox.critical(
-            None, 
-            "Error", 
-            f"Failed to open password store.\n\nError: {e}\n\n"
-            "This might be because of an incorrect master password or corrupted file."
-        )
+        QMessageBox.critical(None, "Error", f"Cannot open store: {e}")
         return 1
     
-    # Show main window
-    window = PasswordManagerMainWindow(store)
+    window = ModernMainWindow(store)
     window.show()
-    
-    # Start event loop
     return app.exec()
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
