@@ -1,8 +1,9 @@
 import sys
 from pathlib import Path
-
 from PySide6.QtWidgets import QApplication, QMessageBox, QDialog
-
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon, QPixmap, QPainter
+from PySide6.QtSvg import QSvgRenderer
 from styles import DARK_STYLE
 from store import PasswordStore
 from dialogs import ModernLoginDialog
@@ -11,6 +12,22 @@ from main_window import ModernMainWindow
 def main() -> int:
     app = QApplication(sys.argv)
     app.setApplicationName("SecureVault")
+    # Load SVG app icon from assets
+    try:
+        svg_path = Path(__file__).parent / "assets" / "lock.svg"
+        def load_svg_icon(path, size=64):
+            renderer = QSvgRenderer(str(path))
+            pixmap = QPixmap(size, size)
+            pixmap.fill(Qt.transparent)
+            painter = QPainter(pixmap)
+            renderer.render(painter)
+            painter.end()
+            return QIcon(pixmap)
+
+        app.setWindowIcon(load_svg_icon(svg_path, 64))
+    except Exception:
+        # Fall back silently if SVG cannot be loaded
+        pass
     
     # Apply modern style
     app.setStyleSheet(DARK_STYLE)
